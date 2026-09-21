@@ -1,0 +1,16 @@
+# secrets never touch the repo
+.env
+*.env
+*token*
+*secret*
+*.key
+*.pem
+# issued guest phrase lists — never commit these
+guestlist*.txt
+guests*.txt
+phrases*.txt
+# runtime
+__pycache__/
+*.log
+*.pid
+.DS_Store
