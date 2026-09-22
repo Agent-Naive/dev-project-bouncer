@@ -6,8 +6,8 @@ Bouncer is a tiny passphrase gate that stands in front of anything you expose to
 
 ## What it is
 
-- A single-file reverse proxy with a passphrase door. One URL serves a passphrase page to strangers and the real app to guests holding a valid session.
-- Per-guest passphrases: each phrase binds to the first IP that uses it, then dies on a timer. (*"Is your name on the list?"*)
+- A single-file passphrase gate with two modes. One URL serves a passphrase page to strangers and the real app to VIPs holding a valid session — serve mode for static apps (bouncer IS the server, one door), proxy mode for dynamic apps.
+- Per-VIP passphrases: each phrase binds to the first IP that uses it, then dies on a timer. (*"Is your name on the list?"*)
 - Built for the trycloudflare era: automated crawlers sweep public tunnels looking for IP and ideas. The bouncer keeps the riffraff outside the velvet rope.
 
 ## What it is not
@@ -18,14 +18,14 @@ Bouncer is a tiny passphrase gate that stands in front of anything you expose to
 
 ## Hard rules
 
-- Secrets never touch the repo. Passphrases are issued to guests, never committed, never pasted into docs.
+- Secrets never touch the repo. Passphrases are issued to VIPs, never committed, never pasted into docs.
 - Stdlib only. If it needs pip, it doesn't belong in v1.
 - Default-OFF: nothing is exposed unless a human deliberately arms the tunnel.
-- The gate lives outside the served folder hierarchy — a separate process in front, never a file inside the web root.
+- One door: the gate only works if it's the only public URL. Never give the backend its own tunnel.
 
 ## Status
 
-v1 is designed (docs/DESIGN.md) and not yet built. Build plan: docs/TODO.md.
+v1 built + tested (Linux VM, 2026-09-21); v2 adds serve mode, bouncer.conf, VIP-list rename. Mac tunnel test pending.
 
 ## Runlines
 

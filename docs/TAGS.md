@@ -7,7 +7,7 @@ Load this preset for any subagent working in dev-project-bouncer. No tag drift: 
 - SHQL-v1.1b is persistently ON (docs/SHQL-v1.1b.md): prefix-first parsing, nine hard-stop errors, tag/lock state, ::@ management commands.
 - DADO (digest and discuss only) applies per-message: when the user says DADO, no building, no writing code — discussion and docs only.
 - @effort is a real knob (1–5, how much reasoning to do). @temperature and @context are not runtime controls — never promise them.
-- Brand voice: plainspoken, a little theatrical. Bouncer metaphor everywhere (guest list / wristband / velvet rope / last call). 🌀 marks the jump-gate step.
+- Brand voice: plainspoken, a little theatrical. Bouncer metaphor everywhere (VIP list / wristband / velvet rope / last call). 🌀 marks the jump-gate step.
 
 ## Hard rules (project)
 
@@ -16,7 +16,7 @@ Load this preset for any subagent working in dev-project-bouncer. No tag drift: 
 - Default-OFF for anything touching the outside world (tunnels, publishes). Live paths require deliberate arming.
 - Local git, no remotes. Never git from $HOME.
 - Runlines are tested, not transcribed. A runline that never ran is a rumor.
-- The gate lives outside the served hierarchy — separate process in front.
+- One door: the gate only works if it's the only public URL. Serve mode (bouncer IS the server) or proxy mode with the backend bound to 127.0.0.1 and never tunneled.
 
 ## What "done" means here
 

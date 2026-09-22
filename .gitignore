@@ -5,10 +5,11 @@
 *secret*
 *.key
 *.pem
-# issued guest phrase lists — never commit these
-guestlist*.txt
-guests*.txt
+# VIP phrase lists — never commit these
+viplist*.txt
 phrases*.txt
+# live setup (the .example ships, yours stays local)
+bouncer.conf
 # runtime
 __pycache__/
 *.log

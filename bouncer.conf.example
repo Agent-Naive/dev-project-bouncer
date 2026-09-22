@@ -1,0 +1,27 @@
+# ============================================================
+# BOUNCER setup — comment / uncomment for your needs.
+# Copy to bouncer.conf and edit it. CLI flags override this file.
+#
+#   cp bouncer.conf.example bouncer.conf
+# ============================================================
+
+# --- MODE 1: serve a static folder (one door, simplest) ---
+# Bouncer IS the server: one port, one tunnel, nothing else listens.
+# Best for static apps — a single HTML file, a docs folder, ...
+SERVE_DIR = ./public
+
+# --- MODE 2: proxy to a dynamic app ---
+# Bouncer forwards authed VIPs to your app. Your app MUST bind 127.0.0.1
+# and MUST NEVER get its own tunnel — one door only. A second tunnel is
+# a second door with no bouncer on it, and crawlers will find it.
+# TARGET = http://127.0.0.1:11435
+
+# --- the basics ---
+PORT = 8787
+BIND = 127.0.0.1
+TTL = 86400
+VIPLIST = ./viplist.txt
+# AUDIT_LOG = ./bouncer.log
+# Attempt logger: JSON lines, one per knock on the gate.
+# Metadata only (time, IP, result, label, user-agent) — never the phrase itself.
+# ATTEMPT_LOG = ./attempts.log

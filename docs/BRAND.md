@@ -8,7 +8,7 @@ Pattern name: **jump gate** — "drop a jump gate (🌀) into your runline."
 
 | Concept | Bouncer-speak |
 |---|---|
-| Passphrases | the guest list — "is your name on the list?" |
+| Passphrases | the VIP list — "is your name on the list?" |
 | Session cookie | the wristband — checked at the door, every request |
 | IP binding | the wristband only fits the wrist it was put on |
 | TTL expiry | last call — wristbands fade at closing time |
@@ -25,7 +25,7 @@ Two actors, two moments — never mix them.
 
 ## Mascot (planned)
 
-Cartoony nightclub bouncer with the 🌀 on his t-shirt. Earpiece, clipboard with the guest list, strong eyebrows (non-negotiable).
+Cartoony nightclub bouncer with the 🌀 on his t-shirt. Earpiece, clipboard with the VIP list, strong eyebrows (non-negotiable).
 
 ## Voice
 
