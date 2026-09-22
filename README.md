@@ -18,6 +18,20 @@ The Bouncer is a tiny passphrase gate that stands in front of anything you expos
 - Not obscurity as security: the gate page announces "something is here." It just never shows the goods without the phrase.
 - IP binding is a speed bump, not a wall — NAT sharing and roaming phones. See docs/DESIGN.md for the honest weaknesses.
 
+## Who it's for
+
+Anyone whose app has a public URL and no auth — which is more people than admit it.
+
+The trycloudflare story was just the first instance. The general shape: **any public URL with no auth is findable; the only question is what the finder meets.** Random-word tunnel URLs are obscurity, not security — four common words is a tiny space for a script to walk, and frontier crawlers sweep public tunnels looking for IP and ideas.
+
+- **trycloudflare / Cloudflare quick tunnels** — the origin story. Word-combo hostnames, enumerable, zero auth. Bouncer in front, done.
+- **ngrok (free tier)** — random hex subdomain, harder to guess but still unauthenticated. ngrok's own auth is paywalled; The Bouncer is the free, self-hosted answer.
+- **Railway / Render / Fly preview deploys** — `*.up.railway.app` and friends are public by default with no built-in gate. Sweet spot: Bouncer listens on the platform's `$PORT`, your app binds `127.0.0.1` behind it in proxy mode. One door, same as the tunnel setup.
+- **A raw VPS with a public IP** — same shape. Bouncer as the front door, app behind it.
+- **Demos, webhook receivers, personal projects, friends-and-family** — anywhere the alternative today is "hope nobody finds the URL."
+
+The honest version, because we're never trying to be something we're not: this is a *shared passphrase* gate, not identity. One phrase per VIP label; revocation means burn-and-rotate. It's the right tool for demos, previews, and personal projects — it is not a replacement for real auth (OAuth, SSO) on a production multi-user app. And the one-door rule still applies everywhere: if the backend is directly reachable, the bouncer is decoration.
+
 ## Hard rules
 
 - Secrets never touch the repo. Passphrases are issued to VIPs, never committed, never pasted into docs.

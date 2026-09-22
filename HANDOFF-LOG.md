@@ -315,3 +315,28 @@ switch) — one-shot phrases become usable again.
 - Mac still needs: `python3 -m py_compile bouncer.py`, one restart, set
   ADMIN_PHRASE (Club Management or bouncer.conf), one knock to see Poli
   tip his hat.
+- Verified on the Mac, same night: clean compile; gate restarted
+  (127.0.0.1:8787, serve mode, 2 VIPs); ADMIN_PHRASE set via Club
+  Management; owner knock -> 302; /enter greets "good evening, boss";
+  second knock -> 302 again; burned.txt never created — zero burns, both
+  shipped VIPs untouched. The owner's pass is human-verified.
+- Release hygiene: `*.bak` added to .gitignore (a `viplist.txt.bak` would
+  otherwise NOT be ignored); `viplist.txt.bak` created as a local backup.
+  `viplist.example.txt` already ships 2 starters — enough.
+- Committed: `da9115e` "bouncer v4: Poli, burn-at-mint, owner's pass"
+  (16 files, secrets all correctly unstaged). Repo is local-only, no
+  remotes — GitHub push is a future release step.
+- Released: MIT LICENSE added (`d64d06a`); history verified clean (no
+  secret ever committed); pushed public via `gh repo create` as
+  **Agent-Naive/dev-project-bouncer** — https://github.com/Agent-Naive/dev-project-bouncer
+  Phase 3 (public release) is done.
+- Follow-up, same night: Jeffrey noticed the boss's doors page still showed
+  "this wristband is good for 1 day" — the boss shouldn't get wristband
+  talk. `serve_doors` now blanks the wristband line for the operator
+  (one line; the grant underneath stays a real TTL/IP-bound session) plus
+  `.wristband:empty{display:none}` so no gap renders. Verified live.
+- README gained "Who it's for" (trycloudflare, ngrok, Railway/Render/Fly,
+  raw VPS, demos/webhooks — with the honest limits: shared passphrase, not
+  identity; not a replacement for real auth). runlines.md gained compile
+  check, restart, Mac knock test, burn-state check, viplist backup, and the
+  public GitHub section.

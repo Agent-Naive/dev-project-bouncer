@@ -188,6 +188,7 @@ h1{font-size:2.1rem;margin:.4rem 0}
 .vip{color:__ACCENT__}
 .sub{color:#999}
 .wristband{color:__ACCENT__;font-size:.95rem;margin:.6rem 0 0}
+.wristband:empty{display:none}
 .poli{max-height:12rem;max-width:75%;border-radius:14px;margin:.2rem auto;display:block;box-shadow:0 8px 30px rgba(0,0,0,.5)}
 .logo svg{max-height:3.5rem;max-width:12rem;margin:1rem auto 0}
 .enter{display:inline-block;margin-top:1.4rem;background:__ACCENT__;color:#111;font-weight:700;padding:.9rem 2.4rem;border-radius:10px;text-decoration:none;font-size:1.15rem}
@@ -604,6 +605,9 @@ class Handler(BaseHTTPRequestHandler):
         if label == ADMIN_LABEL:
             greeting = "good evening, <span class=\"vip\">boss</span>"
             sub = "no knock needed &mdash; Poli knows the face."
+            # The boss doesn't get wristband talk — Poli just waves him in.
+            # (The grant underneath stays a real TTL/IP-bound session.)
+            wristband = ""
         else:
             greeting = "you're on the list, <span class=\"vip\">%s</span>" % html.escape(label)
             sub = "the rope unclips. the doors are open."
