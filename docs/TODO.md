@@ -120,6 +120,10 @@ opening, and the operator's club name should hang over Bouncer's house scene.
 
 - Club Management: one-time token in the URL as a second local-only control
 - Doors page: per-VIP "welcome back" when the label already holds a grant
+- Poli X promo cards, more catchphrase variants on deck (build with
+  ~/workspace/poli-promo/build_cards.py): "The list. Let's see it.",
+  "Talk to the clipboard.", "Poli knows the face.",
+  "Put a bouncer on your tunnel."
 
 ## Project needs
 

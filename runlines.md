@@ -90,6 +90,20 @@ Why: the burn list is the source of truth for dead phrases. When: after knock
 tests — confirm a VIP phrase burned on its first good knock, and that
 `operator` never appears. No file at all means nothing has burned yet.
 
+## Check the traffic (the invisible hit counter)
+
+```
+grep -c '"result": "visit"' attempts.log    # eyeballs on the gate page
+grep -c '"result": "granted"' attempts.log  # knocks that worked
+grep -ci bot attempts.log                   # crawler traffic (UA case varies)
+```
+
+Why: every gate impression logs `result="visit"` in the attempt log
+(metadata only — timestamp, IP, user agent, never a phrase), so the same
+file is your poor-man's analytics. When: after X replies go out — if visits
+climb, the funnel's working. The path is whatever ATTEMPT_LOG is set to
+(blank = off, nothing logged).
+
 ## Back up the VIP list (before burn tests)
 
 ```

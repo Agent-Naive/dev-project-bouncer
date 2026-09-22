@@ -132,10 +132,54 @@ SCENE_SVG = """<svg width="260" height="96" viewBox="0 0 260 96" role="img" aria
 </svg>"""
 
 # ── SETUP: SAFE TO CHANGE ────────────────────────────────────
+# Jump Gate — the tip agent. The spiral on the gate page isn't decoration:
+# it's the house explainer, speaking plainly to strangers about what this
+# page is and why it exists. All tips live in GATE_TIPS; swap the active
+# one with ACTIVE_TIP (0-based). The gate renders it into __TIP__.
+# Each tip is a (text, html) tuple — exactly one side is set. Plain-text
+# tips are HTML-escaped at render; html tips are trusted house strings
+# (our own static markup, same trust as the template itself — never
+# operator input, never request data), so they can carry a <code> block.
+# ────────────────────────────────────────────────────────────
+ACTIVE_TIP = 0
+GATE_TIPS = [
+    # Tip 1 (active). NOTE on the first sentence: it names tunnel links
+    # explicitly because trycloudflare/ngrok users are the primary audience;
+    # "public link" still carries the meaning for Railway/VPS users.
+    ("This site lives behind a public tunnel link \u2014 and public links get "
+     "crawled. Bots index them, strangers browse them, your unfinished work "
+     "stops being yours. This page is the front door that was missing: nothing "
+     "behind it loads without a passphrase from the owner. Each passphrase works "
+     "once and then burns, so even a leaked one can't be passed around.",
+     None),
+    # Tip 2: the privacy-for-hosting angle.
+    ("Services like trycloudflare and ngrok put your project on the public "
+     "internet in seconds \u2014 but public means public. The Bouncer was built as "
+     "a front door for exactly that: visitors stop here. The owner hands out "
+     "single-use passphrases, each bound to one guest, one device, one window of "
+     "time. Your demo, your webhook, your work-in-progress \u2014 private until you "
+     "say otherwise.",
+     None),
+    # Tip 3: the shortest, plainest version.
+    ("Without this page, this link is an open door \u2014 anyone, including "
+     "crawlers, can walk in and take what's here. With it, the door only opens "
+     "for a passphrase the owner gave you. One phrase, one use, then it's gone. "
+     "That's the whole job: your work stays yours.",
+     None),
+    # Tip 4: take him home — the download one-liner as a copy-paste code block.
+    # Never a curl-pipe-to-shell; download, read, then run.
+    (None,
+     "Like the bouncer? Take him home:<br><br>"
+     "<code>curl -sSL https://raw.githubusercontent.com/Agent-Naive/dev-project-bouncer/main/bouncer.py -o bouncer.py</code><br><br>"
+     "One file, stdlib only &mdash; read it before you run it."),
+]
+
+# ── SETUP: SAFE TO CHANGE ────────────────────────────────────
 # The gate page (beat 1: the line). Restyle it, reword it, make it yours —
 # but keep __MSG__ (where errors print) and the <form method="post">
 # with the input named "phrase". __CLUB__ / __LOGO__ / __ACCENT__ are the
-# operator's marquee slots; __SCENE__ is the house art. Never print the
+# operator's marquee slots; __SCENE__ is the house art; __TIP__ is Jump
+# Gate's current tip (see GATE_TIPS). Never print the
 # target path, a phrase, or any config value here: strangers read this page.
 # ────────────────────────────────────────────────────────────
 GATE_HTML = """<!doctype html>
@@ -152,6 +196,14 @@ h1{font-size:1.9rem;margin:.6rem 0 .2rem}
 .err{color:#ff7b7b;min-height:1.4em;margin:.6rem 0}
 input{background:#1a1a1e;border:1px solid #333;color:#fff;padding:.7rem 1rem;font-size:1rem;border-radius:8px;width:16rem}
 button{background:__ACCENT__;color:#111;border:0;padding:.7rem 1.5rem;font-size:1rem;font-weight:700;border-radius:8px;cursor:pointer;margin-top:.8rem}
+.tip{margin:2.2rem auto 0;max-width:26rem}
+.tip .spiral{font-size:2.5rem;line-height:1}
+.tip .who{font-size:.68rem;letter-spacing:.24em;text-transform:uppercase;color:#666;margin:.5rem 0 .4rem}
+.tip .bubble{position:relative;background:#141419;border:1px solid #2c2c34;border-radius:12px;padding:.9rem 1.1rem;font-size:.88rem;line-height:1.6;color:#c9cdd4;text-align:left}
+.tip .bubble:before{content:"";position:absolute;top:-7px;left:50%;width:12px;height:12px;background:#141419;border-left:1px solid #2c2c34;border-top:1px solid #2c2c34;transform:translateX(-50%) rotate(45deg)}
+.tip .bubble code{display:block;background:#0d0d10;border:1px solid #2c2c34;border-radius:8px;padding:.6rem .8rem;margin:.2rem 0;font-family:ui-monospace,monospace;font-size:.8rem;color:#e8e8ea;word-break:break-all;user-select:all}
+.foss{margin-top:1.4rem;font-size:.78rem;color:#666}
+.foss a{color:#8a8f98;text-decoration:none;border-bottom:1px dotted #555}
 </style></head>
 <body><div class="club">
 <div class="awning">__CLUB__</div>
@@ -161,7 +213,9 @@ button{background:__ACCENT__;color:#111;border:0;padding:.7rem 1.5rem;font-size:
 <p class="tag">if you're on the list, you're already in.</p>
 <p class="err">__MSG__</p>
 <form method="post"><input type="password" name="phrase" placeholder="passphrase" autocomplete="off" autofocus><br>
-<button type="submit">let me in</button></form></div></body></html>"""
+<button type="submit">let me in</button></form>
+<div class="tip"><div class="spiral">\U0001f300</div><div class="who">jump gate</div><div class="bubble">__TIP__</div></div>
+<p class="foss">free and open-source &mdash; <a href="https://github.com/Agent-Naive/dev-project-bouncer">github.com/Agent-Naive/dev-project-bouncer</a></p></div></body></html>"""
 
 # ── SETUP: SAFE TO CHANGE ────────────────────────────────────
 # The doors page (beat 2: the doors). Served at /enter after a good
@@ -192,6 +246,8 @@ h1{font-size:2.1rem;margin:.4rem 0}
 .poli{max-height:12rem;max-width:75%;border-radius:14px;margin:.2rem auto;display:block;box-shadow:0 8px 30px rgba(0,0,0,.5)}
 .logo svg{max-height:3.5rem;max-width:12rem;margin:1rem auto 0}
 .enter{display:inline-block;margin-top:1.4rem;background:__ACCENT__;color:#111;font-weight:700;padding:.9rem 2.4rem;border-radius:10px;text-decoration:none;font-size:1.15rem}
+.foss{margin-top:1.6rem;font-size:.78rem;color:#666}
+.foss a{color:#8a8f98;text-decoration:none;border-bottom:1px dotted #555}
 </style></head>
 <body>
 <div class="door l"></div><div class="door r"></div>
@@ -204,6 +260,7 @@ h1{font-size:2.1rem;margin:.4rem 0}
 <p class="wristband">__WRISTBAND__</p>
 <div class="logo">__LOGO__</div>
 <a class="enter" href="/">step inside</a>
+<p class="foss">free and open-source &mdash; <a href="https://github.com/Agent-Naive/dev-project-bouncer">github.com/Agent-Naive/dev-project-bouncer</a></p>
 </div></body></html>"""
 
 # ── SETUP: SAFE TO CHANGE ────────────────────────────────────
@@ -564,7 +621,18 @@ class Handler(BaseHTTPRequestHandler):
 
     def serve_gate(self, msg=""):
         st = self.state
-        page = st.brand(GATE_HTML).replace("__MSG__", html.escape(msg))
+        # The invisible hit counter: every gate impression lands in the attempt
+        # log as result="visit" — poor-man's traffic stats, hidden from the
+        # visitor. Same metadata-only rule as knocks: ts, ip, ua, never a phrase.
+        self.log_attempt("visit")
+        # Jump Gate, the tip agent: the spiral explains the house to strangers.
+        # Swap tips with ACTIVE_TIP; a bad index falls back to tip 0, never a 500.
+        text, html_tip = GATE_TIPS[ACTIVE_TIP] if 0 <= ACTIVE_TIP < len(GATE_TIPS) else GATE_TIPS[0]
+        # Plain-text tips are escaped (strangers read this page); html tips are
+        # trusted house strings — our own static markup, never operator input.
+        tip = html_tip if html_tip is not None else html.escape(text)
+        page = st.brand(GATE_HTML).replace("__MSG__", html.escape(msg)).replace(
+            "__TIP__", tip)
         data = page.encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -683,8 +751,9 @@ class Handler(BaseHTTPRequestHandler):
         return False
 
     def log_attempt(self, result, label="-"):
-        """Attempt logger: one JSON line per knock on the gate. Metadata only —
-        never the attempted phrase (wrong guesses are often typos of real ones)."""
+        """Traffic logger: one JSON line per gate view ("visit") and per knock
+        (granted/denied/ratelimited). Metadata only — never the attempted
+        phrase (wrong guesses are often typos of real ones)."""
         st = self.state
         if not st.attempt_log:
             return
@@ -1382,7 +1451,7 @@ def main():
     ap.add_argument("--audit-log", default=None,
                     help="optional audit log file (default: stdout)")
     ap.add_argument("--attempt-log", default=None,
-                    help="JSON-lines log of every passphrase attempt "
+                    help="JSON-lines log of every gate view and passphrase attempt "
                          "(metadata only, never the phrase)")
     ap.add_argument("--burned", default=None,
                     help="spent one-shot labels file (the forbidden list)")

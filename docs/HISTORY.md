@@ -115,13 +115,40 @@ Fail-closed around the master key: the gate refuses to start if
 Club Management gets an "owner" section — masked, never shown, blank keeps
 the current one.
 
+## Session 11 — the public release, and Poli goes to work
+
+The Bouncer went public under MIT: `github.com/Agent-Naive/dev-project-bouncer`.
+v4 shipped with Poli, burn-at-mint, and the owner's pass — the whole arc from
+a single day's work, start to finish.
+
+Small refinements after the release, Jeffrey's eye: the boss's doors page was
+still showing wristband talk ("this wristband is good for 1 day") — the owner
+doesn't get a wristband, he gets recognized. One line blanks it for the
+operator (the grant underneath stays a real TTL/IP-bound session), plus a CSS
+rule so no gap renders. The README gained "Who it's for" — trycloudflare,
+ngrok, Railway/Render/Fly, raw VPS, demos and webhooks — with the honest
+limits stated plainly: shared passphrase, not identity; never trying to be
+something it's not.
+
+Then Poli got his first job outside the doors: **X promo cards**. Four
+1200x675 landscape cards (X's native size — no feed cropping), each a
+composite of the original Poli art — never regenerated, so zero drift — with
+a comic speech bubble ("Name on the list?", "No phrase, no entry.", "Hold it.
+Phrase first.", "The rope stays up."), THE BOUNCER in gold, a cyan spiral
+echoing his belly, and the GitHub URL as a credit strip. Built for Jeffrey's
+reply-guy campaign: "Try this…" on trycloudflare complaint threads. The
+cards stay local (gitignored, `poli-x-*.png`); the original webp was never
+touched. Build script kept at `~/workspace/poli-promo/build_cards.py` for
+future variants.
+
 ## Open threads — to be continued
 
 - **Cloudflare end-to-end**: the `CF-Connecting-IP` binding, proven live
   through a real tunnel. Local-first, then tunnel — the standing order.
-- **Commit**: v4 + Poli + burn-at-mint, when Jeffrey's ready.
-- **Poli's future**: v1 lives at the doors. The gate? The denied page? The
-  README? The spiral has range.
+- **Poli's future**: promo cards shipped; the gate and the denied page still
+  waiting. The spiral has range.
+- **The SHQL stack**: the jump gate guarding the thing it was built for —
+  Jeffrey will put the Bouncer on his own stack next.
 
 *Free and open-source. Jeffrey will put it on his own SHQL stack after the
 public release — the jump gate guarding the thing it was built for.*

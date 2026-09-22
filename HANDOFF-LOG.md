@@ -340,3 +340,20 @@ switch) — one-shot phrases become usable again.
   identity; not a replacement for real auth). runlines.md gained compile
   check, restart, Mac knock test, burn-state check, viplist backup, and the
   public GitHub section.
+- Poli X promo cards: four 1200x675 cards (composited from the original art,
+  zero drift, zero halos), four catchphrase variants for rotating across
+  replies. Gitignored as poli-x-*.png; original webp untouched; build script
+  kept at ~/workspace/poli-promo/build_cards.py. For the "Try this..." reply
+  campaign on trycloudflare complaint threads.
+- Jump Gate, the tip agent: the gate page now carries the spiral (2.5rem, shirt-print
+  scale) with a chat bubble across the bottom explaining in plain terms what The
+  Bouncer is and why it exists. All tips live in GATE_TIPS (3 written, tip 1 active);
+  swap on demand with ACTIVE_TIP. Named Jump Gate — the original name coming home.
+- Option 3 built (demo funnel): static "free and open-source" GitHub footer on both
+  the gate and doors pages; Jump Gate tip #4 with a copy-paste curl one-liner
+  (raw.githubusercontent download — never a curl-pipe-to-shell). Tips are now
+  (text, html) tuples: plain text escaped, html trusted house-only so tip 4 can
+  carry a <code> block (one-click select). ACTIVE_TIP stays 0.
+- Invisible hit counter: every gate impression logs result="visit" in the attempt
+  log (same file, same metadata-only rule) — poor-man's traffic stats, hidden
+  from the visitor. No new flags; works with the existing ATTEMPT_LOG.

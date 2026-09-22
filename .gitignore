@@ -19,3 +19,5 @@ __pycache__/
 .DS_Store
 # spent one-shot labels — written automatically on every burn, never commit
 burned.txt
+# local promo cards (X marketing) — generated, never commit
+poli-x-*.png
