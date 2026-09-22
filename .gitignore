@@ -5,9 +5,11 @@
 *secret*
 *.key
 *.pem
-# VIP phrase lists — never commit these
-viplist*.txt
+# VIP phrase lists — never commit these (the .example ships, yours stays local)
+viplist.txt
 phrases*.txt
+# local backups of the above — also never commit
+*.bak
 # live setup (the .example ships, yours stays local)
 bouncer.conf
 # runtime
@@ -15,3 +17,5 @@ __pycache__/
 *.log
 *.pid
 .DS_Store
+# spent one-shot labels — written automatically on every burn, never commit
+burned.txt

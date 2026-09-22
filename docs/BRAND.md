@@ -1,6 +1,6 @@
-# BOUNCER — brand lockup
+# THE BOUNCER — brand lockup
 
-Official name: **BOUNCER** 🌀  
+Official name: **The Bouncer** 🌀  
 Tagline: *Put a bouncer on your tunnel.*  
 Pattern name: **jump gate** — "drop a jump gate (🌀) into your runline."
 
@@ -16,6 +16,8 @@ Pattern name: **jump gate** — "drop a jump gate (🌀) into your runline."
 | The gate page | the velvet rope |
 | Running the script | parse the 🌀 — the operator's move; the gate goes live |
 | Entering the phrase | the visitor's move — say it, get past the bouncer |
+| Burn-at-mint | the phrase dies the moment it works — a restart can't re-arm it |
+| The operator's phrase | the owner's face — Poli knows the boss, no knock needed |
 
 Two actors, two moments — never mix them.
 
@@ -23,9 +25,14 @@ Two actors, two moments — never mix them.
 
 🌀 — the jump-gate mark. In runlines it denotes the gate step. Parse the spiral to activate the gate.
 
-## Mascot (planned)
+## Mascot
 
-Cartoony nightclub bouncer with the 🌀 on his t-shirt. Earpiece, clipboard with the VIP list, strong eyebrows (non-negotiable).
+**Poli** — an original cartoon bouncer (not a Pokémon, and not "Paulie"):
+hugely fat belly, shirt barely fitting with one button holding the line, the
+🌀 stretched across the gut, bushy eyebrows, gold jewelry, stogie, clipboard.
+Funny, rough, street-tough. Named as a nod to Poliwhirl's spiral belly. He
+stands on the doors page (`/enter`), not at the gate — the gate stays a clean
+knock.
 
 ## Voice
 

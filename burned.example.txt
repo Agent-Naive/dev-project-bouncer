@@ -1,0 +1,11 @@
+# BOUNCER burned list — example. The real burned.txt is written automatically
+# (one spent label per line) and is gitignored — never commit it.
+#
+# A label lands here when its one-shot phrase is spent: the grant expired
+# (EXPIRED) or a different IP tried to use the wristband (KILL_IP). A burned
+# label can't knock again — not even after a restart. The only way back in
+# is a fresh phrase: tick regenerate for that label in Club Management,
+# which hands it a new phrase and removes it from this file.
+#
+# Example (commented out — a real burned.txt has no comments, just labels):
+# frank

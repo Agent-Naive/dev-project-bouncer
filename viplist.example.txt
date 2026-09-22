@@ -1,0 +1,12 @@
+# BOUNCER VIP list — EXAMPLE ONLY
+# Copy to viplist.txt and put real phrases there. viplist.txt is gitignored.
+# NEVER commit real phrases. If you're not on the list, you're not getting in. 🌀
+#
+# Format: label<space>phrase     (the phrase may contain spaces)
+# Lines starting with # are ignored.
+# The bouncer lets you in 'cause you're the shit. Act like it.
+joe     correct horse battery staple
+frank   another secret phrase here
+# Per-VIP grant lifetime: a number right after the label is that VIP's own
+# TTL in seconds — `frank 28800 ...` gets 8 hours instead of the house TTL.
+# Spent phrases land in burned.txt; a burned label needs a fresh phrase.

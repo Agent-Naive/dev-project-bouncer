@@ -1,16 +1,16 @@
-# BOUNCER — TODO / project needs
+# THE BOUNCER — TODO / project needs
 
-## Phase 0 — Scaffold (docs) [in progress]
+## Phase 0 — Scaffold (docs) [done]
 
 - [x] Project dir + docs/SHQL-v1.1b.md + New-Project.md (Jeffrey)
 - [x] docs/TODO.md (this file)
-- [ ] README.md — what/why, what-it-is-not, hard rules, runlines pointer
-- [ ] docs/BRAND.md — brand lockup
-- [ ] docs/DESIGN.md — technical design from the DADO sessions
-- [ ] docs/TAGS.md — subagent tag chain / preset
-- [ ] runlines.md — setup/run/tunnel/kill
-- [ ] HANDOFF-LOG.md — session continuity
-- [ ] .gitignore — secrets never touch the repo
+- [x] README.md — what/why, what-it-is-not, hard rules, runlines pointer
+- [x] docs/BRAND.md — brand lockup
+- [x] docs/DESIGN.md — technical design from the DADO sessions
+- [x] docs/TAGS.md — subagent tag chain / preset
+- [x] runlines.md — setup/run/tunnel/kill
+- [x] HANDOFF-LOG.md — session continuity
+- [x] .gitignore — secrets never touch the repo
 - [x] git init (local only, no remotes) + scaffold commit (5d416b5, 2026-09-21)
 
 ## Phase 1 — v1 build (bouncer.py) [BUILT + TESTED 2026-09-21]
@@ -29,8 +29,10 @@ Single stdlib-only Python file. No dependencies, no pip, no venv.
 - [x] Nothing sensitive in served HTML/JS; no second path ever client-visible
 
 Decisions locked during build:
-- One-shot phrases: after a grant dies (IP mismatch or TTL), the phrase is burned
-  until the operator restarts bouncer. (Matches "poof the access dies".)
+- One-shot phrases: after a grant dies (IP mismatch or TTL), the phrase is
+  burned into burned.txt (the forbidden list) and stays burned across
+  restarts — only a fresh phrase (Club Management regenerate) re-arms the
+  label. (Matches "poof the access dies", now durable.)
 - Cookie HMAC is verified against the grant's bound values (not the request IP),
   so a wrong-IP cookie both fails AND burns the grant with a KILL_IP audit line.
   (First implementation verified against the request IP, which made KILL_IP/EXPIRED
@@ -62,7 +64,46 @@ backend walks right around the bouncer. So:
 - [x] Tunnel test via trycloudflare on the Mac (2026-09-21): gate -> wrong phrase denied
       ("not on the list.") -> correct phrase granted -> green dummy page, end-to-end
       through the tunnel in serve mode. One-door architecture verified live.
-- [ ] Runlines: app runlines tested on Linux; tunnel runline needs Mac verification
+- [x] Runlines: app runlines tested on Linux; tunnel runline verified on the Mac
+
+## Phase 2.5 — The night: branding + Club Management [BUILT + TESTED 2026-09-21]
+
+Jeffrey: don't lose the branding opportunity — the VIP should *feel* the doors
+opening, and the operator's club name should hang over Bouncer's house scene.
+
+- [x] Three beats: the line (branded gate `/`) -> the doors (`/enter`,
+      "you're on the list, {label}", doors swing open) -> the club (app at `/`)
+- [x] Grant 302s to `/enter` (was `/`); `/enter` gated on a live grant
+      (no grant -> back to the gate); "step inside" button stays on-origin
+- [x] Marquee slots: `CLUB_NAME` / `CLUB_LOGO` / `ACCENT` in bouncer.conf
+      (+ `--club-name` / `--club-logo` / `--accent` flags); name+label
+      HTML-escaped, bad accent falls back to house gold
+- [x] House scene: inline SVG rope + posts + red carpet (`SCENE_SVG`);
+      mascot moves in later
+- [x] Club Management (`--manage`): local-only web form (127.0.0.1 forced,
+      never tunnel it) — pre-fills from current config, phrases masked with
+      regenerate checkboxes, `gen_phrase()` 5-word generator, writes `bouncer.conf`
+      (unknown keys and comments preserved) + `viplist.txt`, new phrases shown once
+- [x] Three writers, one contract: AI (AI-Setup-Directions.md), Club
+      Management, terminal — same schema, same order
+- [x] `docs/BRANDING.md`: slot list, sizes, formats, what-not-to-do
+- [x] VM battery: branding render, doors flow, manage save/prefill/phrases,
+      XSS escaping, accent fallback, proxy still clean, one-shot + KILL_IP
+      + 429 + traversal all still green
+
+## Phase 2.6 — Per-VIP TTL, durable burns, wristband announcement (2026-09-21) [BUILT + TESTED on Linux VM]
+
+- [x] `burned.txt`: every burn (EXPIRED/KILL_IP) appended to disk, loaded at
+      startup — a restart can't re-arm a dead phrase. `--burned` / `BURNED` key;
+      gitignored. Club Management shows the burned-out list and the burned-file
+      path; regenerating a phrase re-arms the label (dropped from burned.txt
+      on save — the only way back in).
+- [x] Per-VIP grant lifetime: `label ttl phrase` lines in viplist.txt; blank =
+      the house TTL from bouncer.conf. Backward compatible (`label phrase`
+      still works). Club Management has a per-row TTL field (blank = house);
+      the confirm page shows each new phrase's wristband length.
+- [x] `/enter` announces the wristband: "this wristband is good for 8 hours —
+      last call 6:04 PM."
 
 ## Phase 3 — Release (public, free)
 
@@ -77,7 +118,8 @@ backend walks right around the bouncer. So:
 
 ## Future ideas
 
-(none yet — the attempt logger was here, now it's built. see Phase 1.5.)
+- Club Management: one-time token in the URL as a second local-only control
+- Doors page: per-VIP "welcome back" when the label already holds a grant
 
 ## Project needs
 

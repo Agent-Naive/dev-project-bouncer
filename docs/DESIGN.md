@@ -1,4 +1,4 @@
-# BOUNCER — technical design
+# THE BOUNCER — technical design
 
 Status: v1 built + tested (Linux VM, 2026-09-21, proxy mode). v2 adds serve mode
 (one-door static), bouncer.conf setup file, VIP-list rename — built + tested

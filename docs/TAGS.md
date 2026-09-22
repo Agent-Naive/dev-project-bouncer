@@ -1,4 +1,4 @@
-# BOUNCER — tag chain / preset
+# THE BOUNCER — tag chain / preset
 
 Load this preset for any subagent working in dev-project-bouncer. No tag drift: one chain, everywhere.
 

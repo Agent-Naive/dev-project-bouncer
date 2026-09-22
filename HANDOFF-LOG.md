@@ -1,4 +1,4 @@
-# BOUNCER — handoff log
+# THE BOUNCER — handoff log
 
 ## 2026-09-21 — Session 1 (scaffold)
 
@@ -87,7 +87,7 @@ Not done:
 - Phase 3 (release) and Phase 4 (adopt on SHQL stack).
 
 Next:
-- Jeffrey: run the tunnel test from the phone (gate -> phrase "velvet rope test one"
+- Jeffrey: run the tunnel test from the phone (gate -> joe's test phrase
   -> green dummy page), then git add -A && git commit.
 
 ## 2026-09-21 — Session 3b (tunnel test PASSED on the Mac)
@@ -95,7 +95,7 @@ Next:
 - Tunnel URL served the gate to the open internet (verified from the Linux VM:
   gate page loaded through the trycloudflare URL).
 - Jeffrey on his phone: wrong phrase -> "not on the list." (deny path confirmed first,
-  phrase unspent), then "velvet rope test one" -> 302 -> green dummy page.
+  phrase unspent), then joe's test phrase -> 302 -> green dummy page.
 - First grant attempt 404'd ("nothing here.") — the macOS /tmp symlink bug, fixed
   and re-verified (see Session 3). After restarting bouncer, the grant worked.
 - One-door serve mode verified live end-to-end: single tunnel, single port,
@@ -131,3 +131,187 @@ Next:
   constants), plus a top-of-file pointer to the doc.
 - Verified on the VM with the exact Mac file: compiles, gate/grants/traversal
   all behave.
+
+## 2026-09-21 — Session 6 (the night: branding + Club Management)
+
+- Jeffrey, DADO first: "don't lose the branding opportunity by missing the
+  doors opening for the VIP to enter." Then: brand the first page too
+  ("welcome to Club <project>"), users layer their own sub-branding over the
+  house scene with a spec doc. Then: "maybe we write a local web interface
+  admin page... it then saves the file as the config... re-runs would
+  overwrite the old config... doable?" Then: "the AI could just do it behind
+  the scenes." Then: "maybe call it Run Club Management or something lol
+  instead of wizard." Then: "do it all :)" — DADO lifted, full build.
+- Built in `bouncer.py` (1175 lines, stdlib only):
+  - **Three beats**: the line (branded gate `/`) -> the doors (`/enter`:
+    "you're on the list, {label}", CSS doors swing open, "step inside"
+    button -> `/`) -> the club (app). Grant 302s to `/enter` (was `/`).
+  - **Marquee slots**: `CLUB_NAME` / `CLUB_LOGO` (inline SVG or .svg path) /
+    `ACCENT` in bouncer.conf + CLI flags. Name/label HTML-escaped, bad accent
+    falls back to velvet-rope gold, logo failures -> house art carries it.
+  - **House scene**: inline `SCENE_SVG` (rope, posts, red carpet). Mascot later.
+  - **Club Management** (`--manage`): local-only (127.0.0.1 forced) web form —
+    pre-fills from current config, phrases masked with regenerate checkboxes,
+    `gen_phrase()` 5-word generator, writes `bouncer.conf` (unknown keys and
+    comments preserved) + `viplist.txt`, new/changed phrases shown once.
+    Never tunnel it — says so on the page.
+  - **Three writers, one contract**: AI (AI-Setup-Directions.md), Club
+    Management, terminal — same schema, same order.
+- Docs: `bouncer.conf.example` (marquee section), `docs/BRANDING.md` (new —
+  slot list, sizes, formats), `docs/AI-Setup-Directions.md` (three beats,
+  three writers, /enter verification, never-tunnel-manage rule),
+  `runlines.md` (manage runline), `README.md`, `docs/TODO.md` (Phase 2.5).
+- Tested on the Linux VM with the exact files: branded gate render, denied/
+  granted, 302 -> /enter, doors greets by label, /enter without grant -> gate,
+  step-inside -> app, KILL_IP, one-shot burn, 429, traversal 404, proxy clean,
+  manage save + prefill + phrase gen, XSS escaped, accent fallback, logo file
+  inlined, manage-written config runs the gate.
+- Test notes: pkill -f can match your own shell's command line when the
+  pattern appears later in it — `fuser -k PORT/tcp` is bulletproof.
+- Shipped to the Mac: bouncer.py + all docs above. Mac needs a bouncer
+  restart to pick it up (grants wipe — the kill switch — and one-shot
+  phrases become usable again).
+- Ship note: bouncer.py went over in 5 chunks (A–E) through the paired-device
+  file API, each chunk pulled back and diffed byte-for-byte against the
+  VM-tested build before the next went. The diff caught three transcription
+  slips (a literal `\U0001f300` written as the emoji, one indent slip, one
+  trailing newline) — all fixed. Final Mac bouncer.py is byte-identical
+  (55,083 bytes, 1175 lines) to the tested build. Jeffrey to verify:
+  `cd /Users/agent-naive/dev-project-bouncer && python3 -m py_compile bouncer.py`.
+
+## 2026-09-21 — Session 7 (release fixes)
+
+Code review before release found three real bugs; all fixed, re-tested on
+the VM (22-check battery, all passing), and shipped to the Mac as targeted
+edits — Mac bouncer.py is byte-identical (55,900 bytes, 1188 lines) to the
+fixed, tested build:
+- **Mode switch left a stale key.** Saving in serve mode kept the old
+  `TARGET` line (and vice versa), so the gate fail-closed on restart with
+  "pick ONE mode". Club Management now writes every managed key on each
+  save; the unchosen mode's key goes blank, and a blank attempt-log field
+  means off (a stale path can't re-enable logging).
+- **Multi-line pasted logo broke the conf file.** `bouncer.conf` is
+  line-oriented; a multi-line SVG paste would kill parsing. The save handler
+  now collapses the logo field to one line (SVG doesn't care), and the docs
+  say: inline SVG must be one line, or use a `.svg` path.
+  (`docs/BRANDING.md`, `bouncer.conf.example` updated.)
+- **Authed VIPs couldn't POST to their own app.** Any POST — even with a
+  live grant — ran the knock ceremony: denied, rate-limited, logged as a
+  knock. Now an authed POST goes behind the rope to the app; only strangers
+  knock. (PUT/PATCH/DELETE already forwarded; verified with bodies.)
+- Also verified: phrase preserve vs regenerate vs custom on save, duplicate
+  labels -> 400, comments and unknown config keys survive a Management save,
+  shown-once page lists only new/changed phrases.
+- `runlines.md`: commit message updated to the v3 release line; Tested
+  section notes the fix battery.
+
+Still needs Jeffrey: `python3 -m py_compile bouncer.py`, then the git
+ignore/status checks, then commit. Restarting the gate wipes grants (kill
+switch) — one-shot phrases become usable again.
+
+## 2026-09-21 — Session 8 (durable burns, per-VIP TTL, wristband announcement)
+
+- Jeffrey, after the DADO on burn mechanics: "go on all three in that order" —
+  (1) persistent burned list, (2) per-VIP TTL on the viplist line, (3) grant-time
+  announcement on /enter. Built and tested on the Linux VM, shipped as chunks.
+- Feature 1 — **burned.txt (the forbidden list)**. The `st.burned` set was
+  in-memory only: a restart silently re-armed dead phrases. Now every burn
+  (EXPIRED, KILL_IP) is appended to `burned.txt` via `persist_burn()`, loaded at
+  startup with `load_burned()`. New `--burned` flag / `BURNED` config key (a
+  managed key, written every Club Management save — a path, never blanked).
+  Gitignored; `burned.example.txt` tracked. Club Management shows the burned-out
+  labels and the burned-file path. **Re-issue rule: a fresh phrase is the only
+  way back in** — regenerating (or hand-setting a new phrase) for a burned label
+  drops it from burned.txt via `unburn_labels()` on save. Never automatic.
+- Feature 2 — **per-VIP TTL**. viplist lines are now `label phrase` (house TTL)
+  or `label ttl phrase` (that VIP's own grant lifetime, seconds). One parser
+  (`split_viplist_line`) serves the gate and Club Management; a positive integer
+  right after the label is always a TTL, so a phrase beginning with a number
+  needs an explicit TTL in front of it (documented — generated phrases never
+  start with digits, so Club Management output is unambiguous). load_viplist
+  fail-closes on malformed lines. Club Management: per-row TTL field
+  (blank = house TTL, and blanking drops an explicit TTL — "blank means house
+  rules"); untouched rows keep phrase AND TTL; invalid row TTL -> 400. Confirm
+  page shows each new phrase with its wristband length ("2 hours" / "house
+  grant lifetime").
+- Feature 3 — **/enter announces the grant**. The doors page now renders
+  "this wristband is good for 8 hours — last call 6:04 PM." under the greeting,
+  from the grant's stored TTL and expiry (server-local time).
+- Design note: the TTL was never the phrase's lifetime — the phrase dies on
+  first use regardless. The TTL is the *wristband's* lifetime. Per-VIP TTL makes
+  that visible and tunable per guest (contractor: 8 hours; friend: a week).
+- Tested on the Linux VM, 23/23 + 11/11:
+  - per-VIP TTL honored at grant time (cookie expiry delta 5s / 7200s / 86400s);
+    2-token lines used the house TTL; old-format lines with multi-word phrases
+    still parse.
+  - EXPIRED burn persisted to burned.txt; after restart the burned phrase was
+    denied ("not on the list") while the live label still knocked clean.
+  - KILL_IP burn persisted; denied after restart.
+  - Club Management: negative/non-numeric row TTL -> 400; regen + TTL 7200 saved
+    `vipA 7200 <phrase>`, confirm showed "2 hours", burned.txt dropped vipA;
+    after gate restart the new phrase granted with a 7200s wristband and /enter
+    announced "good for 2 hours"; the old phrase stayed dead.
+  - Prefill showed per-row TTLs and the burned-out list; unchanged save preserved
+    explicit TTLs, comments, and unknown config keys; BURNED written; duplicate
+    labels still 400.
+- Shipped to the Mac: bouncer.py chunks (byte-identical) + burned.example.txt +
+  PATCHES.md (7 small doc/config edits). Mac needs: apply patches, concatenate
+  chunks -> bouncer.py, `python3 -m py_compile bouncer.py`, restart the gate to
+  pick it up (grants wipe — the kill switch; burned phrases stay burned).
+
+## 2026-09-21 — Session 9 (Poli on the doors)
+
+- **Poli, the mascot.** Original cartoon bouncer, explicitly not a Pokemon:
+  hugely fat belly, shirt barely fits with one button holding the line, spiral
+  stretched across the belly, bushy eyebrows, gold jewelry, stogie, clipboard —
+  funny, rough, street-tough. Named Poli as a nod to Poliwhirl's spiral belly
+  (Jeffrey: not "Paulie").
+- **Placement: the doors page /enter, not the gate.** Gate stays a clean
+  knock; on /enter Poli greets the VIP by name, unclips the rope, and presents
+  the wristband. Future spots later — v1 lives at the doors.
+- Technical: public `/poli.webp` asset route (no grant needed — a cartoon, not
+  a secret) + `serve_poli()` reading a fixed filename alongside bouncer.py
+  (missing file -> 404 "poli is off duty", never a crash); `.poli` CSS;
+  `<img class="poli">` on DOORS_HTML. The gate page carries no Poli reference.
+- Art: Jeffrey placed the original full-size sketch as `poli.webp` (673,026
+  bytes, 1280x1920). The doors-page CSS caps it at 12rem high / 75% wide, so
+  it renders the same as the planned optimized version — just served heavier
+  (cached 1h by the asset route).
+- Mac: the 4 code edits are applied this session (mirrored from the tested VM
+  build); `poli.webp` is in place. Still needed: `python3 -m py_compile
+  bouncer.py`, one restart, one knock, visual confirm of Poli on /enter.
+
+## 2026-09-21 — Session 10 (retitled: The Bouncer)
+
+- Jeffrey: "should this project actually be titled and known as The
+  Bouncer?" Yes — it joins The Judge in the cast of characters, and with
+  Poli as the face the project reads as one persona, not a utility.
+- Changed: display title across README, all docs, `bouncer.conf.example`,
+  and the `--help` description; default marquee `DEFAULT_CLUB_NAME =
+  "The Bouncer"` (the live gate's awning picks it up on next restart —
+  `bouncer.conf` doesn't set CLUB_NAME). Unchanged: folder name, 🌀,
+  tagline ("Put a bouncer on your tunnel"), `server_version` tokens.
+
+## 2026-09-21 — Session 11 (burn at mint + the owner's pass)
+
+- Jeffrey closed the burn-semantics question with logic, not preference:
+  trycloudflare pipes are ephemeral by design and coders restart servers
+  constantly — so burns that only fired when a wristband came back to the
+  door left every tester's phrase quietly re-arming all day. The fix:
+  **burn at mint**. The phrase dies the moment it mints a grant — durably,
+  in burned.txt, on the first good knock. Wristband stays valid for its TTL;
+  a restart can't re-arm the phrase. The burn list finally keeps the
+  one-shot promise it always advertised.
+- **The owner's pass**: `ADMIN_PHRASE` (bouncer.conf / `--admin-phrase` / Club
+  Management "owner" section) mints grants that never burn — knock as often
+  as you like, across restarts. The wristband still fades at TTL and stays
+  IP-bound; only the phrase is immortal. Recognition, not a bypass: the
+  doors page greets the operator "good evening, boss — no knock needed,
+  Poli knows the face." Fail-closed: gate refuses to start if ADMIN_PHRASE
+  matches a VIP phrase; `operator` is a reserved label.
+- Tested on the Linux VM (burn-at-mint, restart survival, admin re-knock,
+  expiry idempotency, both fail-closed guards, blank-admin start, VIP
+  greeting intact), mirrored to the Mac as targeted edits.
+- Mac still needs: `python3 -m py_compile bouncer.py`, one restart, set
+  ADMIN_PHRASE (Club Management or bouncer.conf), one knock to see Poli
+  tip his hat.

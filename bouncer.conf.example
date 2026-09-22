@@ -1,19 +1,21 @@
 # ============================================================
-# BOUNCER setup — comment / uncomment for your needs.
+# THE BOUNCER setup — comment / uncomment for your needs.
 # Copy to bouncer.conf and edit it. CLI flags override this file.
+# Or run Club Management (local only, never tunnel it):
+#     python3 bouncer.py --manage
 #
 #   cp bouncer.conf.example bouncer.conf
 # ============================================================
 
 # --- MODE 1: serve a static folder (one door, simplest) ---
-# Bouncer IS the server: one port, one tunnel, nothing else listens.
+# The Bouncer IS the server: one port, one tunnel, nothing else listens.
 # Best for static apps — a single HTML file, a docs folder, ...
 SERVE_DIR = ./public
 
 # --- MODE 2: proxy to a dynamic app ---
 # Bouncer forwards authed VIPs to your app. Your app MUST bind 127.0.0.1
 # and MUST NEVER get its own tunnel — one door only. A second tunnel is
-# a second door with no bouncer on it, and crawlers will find it.
+# a back door with no bouncer on it, and crawlers will find it.
 # TARGET = http://127.0.0.1:11435
 
 # --- the basics ---
@@ -21,7 +23,36 @@ PORT = 8787
 BIND = 127.0.0.1
 TTL = 86400
 VIPLIST = ./viplist.txt
+# VIP list format (viplist.txt), one per line:
+#   label phrase          — this VIP gets the house grant lifetime (TTL above)
+#   label ttl phrase      — this VIP's own grant lifetime, in seconds
+# A positive integer right after the label is always read as a TTL. A phrase
+# that begins with a number needs an explicit TTL in front of it.
+# Spent one-shot phrases are recorded in burned.txt (below) — gitignored.
 # AUDIT_LOG = ./bouncer.log
 # Attempt logger: JSON lines, one per knock on the gate.
 # Metadata only (time, IP, result, label, user-agent) — never the phrase itself.
 # ATTEMPT_LOG = ./attempts.log
+# Burned list: labels whose one-shot phrase is spent (the forbidden list).
+# Written automatically on every burn, loaded at startup — a restart can't
+# re-arm a dead phrase. Only a fresh phrase (Club Management regenerate)
+# lets a burned label knock again. Gitignored — never commit it.
+BURNED = ./burned.txt
+
+# --- the owner ---
+# The operator's phrase: Poli knows the boss. It mints wristbands like any
+# VIP phrase, but it NEVER burns — knock as often as you like, across
+# restarts. This is the master key to the club: anyone holding it walks in
+# forever. Generate it strong, keep it secret, keep it OUT of git.
+# Blank/missing = no owner; every phrase is one-shot.
+# ADMIN_PHRASE = correct horse battery staple owner edition
+
+# --- the marquee: your branding on the gate + doors pages ---
+# The night runs in three beats: the line (gate) -> the doors (/enter)
+# -> the club (your app). These slots put YOUR name over OUR scene
+# (rope, carpet, doors — the house art). See docs/BRANDING.md
+# for sizes, formats, and placement.
+CLUB_NAME = The Bouncer
+# CLUB_LOGO = ./logo.svg     # inline <svg...> (ONE line — the conf file is
+                            # line-oriented) or a path to a .svg file
+ACCENT = #c9a227             # velvet-rope gold (#rgb or #rrggbb)

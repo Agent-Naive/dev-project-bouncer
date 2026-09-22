@@ -1,13 +1,15 @@
-# BOUNCER 🌀
+# The Bouncer 🌀
 
 *Put a bouncer on your tunnel.*
 
-Bouncer is a tiny passphrase gate that stands in front of anything you expose to the internet — the "jump gate" (🌀) you drop into your runline. One Python file, stdlib only, free forever.
+The Bouncer is a tiny passphrase gate that stands in front of anything you expose to the internet — the "jump gate" (🌀) you drop into your runline. One Python file, stdlib only, free forever.
 
 ## What it is
 
 - A single-file passphrase gate with two modes. One URL serves a passphrase page to strangers and the real app to VIPs holding a valid session — serve mode for static apps (bouncer IS the server, one door), proxy mode for dynamic apps.
 - Per-VIP passphrases: each phrase binds to the first IP that uses it, then dies on a timer. (*"Is your name on the list?"*)
+- The night runs in three beats: **the line** (branded gate page) → **the doors** (`/enter` — "you're on the list, {label}", the doors swing open) → **the club** (your app). Your club name, logo, and colors hang over the house scene — see `docs/BRANDING.md`.
+- Setup three ways, one contract (`bouncer.conf`): your AI (see `docs/AI-Setup-Directions.md`), **Club Management** (`python3 bouncer.py --manage` — a local-only web form, never tunneled), or the terminal.
 - Built for the trycloudflare era: automated crawlers sweep public tunnels looking for IP and ideas. The bouncer keeps the riffraff outside the velvet rope.
 
 ## What it is not
@@ -21,12 +23,12 @@ Bouncer is a tiny passphrase gate that stands in front of anything you expose to
 - Secrets never touch the repo. Passphrases are issued to VIPs, never committed, never pasted into docs.
 - Stdlib only. If it needs pip, it doesn't belong in v1.
 - Default-OFF: nothing is exposed unless a human deliberately arms the tunnel.
-- One door: the gate only works if it's the only public URL. Never give the backend its own tunnel.
+- One door: the gate only works if it's the only public URL. Never give the backend its own tunnel. Never tunnel Club Management.
 
 ## Status
 
-v1 built + tested (Linux VM, 2026-09-21); v2 adds serve mode, bouncer.conf, VIP-list rename. Mac tunnel test pending.
+v1 built + tested (Linux VM, 2026-09-21); v2 adds serve mode, bouncer.conf, VIP-list rename. Mac tunnel test passed (2026-09-21). v3 adds the three-beat night (branded gate, `/enter` doors page), marquee slots (`CLUB_NAME`/`CLUB_LOGO`/`ACCENT`), and Club Management — built + tested on the VM 2026-09-21.
 
 ## Runlines
 
-See runlines.md. Project runlines are live; app runlines land with the v1 build.
+See runlines.md.
