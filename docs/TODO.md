@@ -118,6 +118,22 @@ opening, and the operator's club name should hang over Bouncer's house scene.
 
 ## Future ideas
 
+- Multi-tunnel how-to (doc to write for users, 2026-09-22): one Bouncer
+  instance serves any number of cloudflared tunnels at once — tunnels are
+  dumb pipes, the Bouncer doesn't monitor them. Point N tunnels at the
+  Bouncer's port and each mints its own public URL; all hit the same gate
+  -> same TARGET. One Bouncer = one TARGET = one app; a second app needs
+  a second Bouncer instance on its own port (e.g. dropwire gate :8789 ->
+  :3000). One-door rule still holds per app: every public tunnel must
+  terminate AT the Bouncer, never at the backend directly.
+- Club Management: multi-project support (2026-09-22): one Bouncer per app
+  means N confs to administer. Manage UI gets a project switcher — each
+  project is a conf + viplist pair with its own ADMIN_PHRASE (per-project
+  admin already exists at the gate level; the UI just edits it per
+  project). Registry by convention: a `clubs/` dir of named confs. Manage
+  UI stays localhost-only, never tunneled. Maybe later: per-project
+  running/not indicator via a port check.
+
 - Club Management: one-time token in the URL as a second local-only control
 - Doors page: per-VIP "welcome back" when the label already holds a grant
 - Poli X promo cards, more catchphrase variants on deck (build with

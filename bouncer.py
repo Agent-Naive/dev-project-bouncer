@@ -43,11 +43,16 @@ viplist.txt format (one per line, keep OUT of git — see .gitignore):
 
     joe     correct horse battery staple
     frank   28800 another secret phrase here
+    Rick     joke Never Gonna Give You Up
 
 Label is the first token; the rest of the line is the phrase (spaces allowed).
 A positive integer right after the label is that VIP's own grant lifetime in
 seconds (frank gets 8 hours); without it, the house TTL from bouncer.conf
-applies. Lines starting with # are ignored.
+applies. The word "joke" right after the label marks a joke-door phrase: it
+never burns -- every guest gets their own wristband -- and the wristband is
+locked to rickroll.html, never the app. Toggle the joke door with RICKROLL
+in bouncer.conf (or the Club Management checkbox). Lines starting with #
+are ignored.
 Burned one-shot phrases land in burned.txt (also gitignored) — the forbidden
 list. Phrases burn the moment they mint a grant, so a burned label can't
 knock again until you hand it a fresh phrase.
@@ -204,6 +209,7 @@ button{background:__ACCENT__;color:#111;border:0;padding:.7rem 1.5rem;font-size:
 .tip .bubble code{display:block;background:#0d0d10;border:1px solid #2c2c34;border-radius:8px;padding:.6rem .8rem;margin:.2rem 0;font-family:ui-monospace,monospace;font-size:.8rem;color:#e8e8ea;word-break:break-all;user-select:all}
 .foss{margin-top:1.4rem;font-size:.78rem;color:#666}
 .foss a{color:#8a8f98;text-decoration:none;border-bottom:1px dotted #555}
+.tip .bubble a{color:#8a8f98;text-decoration:none;border-bottom:1px dotted #555}
 </style></head>
 <body><div class="club">
 <div class="awning">__CLUB__</div>
@@ -215,6 +221,7 @@ button{background:__ACCENT__;color:#111;border:0;padding:.7rem 1.5rem;font-size:
 <form method="post"><input type="password" name="phrase" placeholder="passphrase" autocomplete="off" autofocus><br>
 <button type="submit">let me in</button></form>
 <div class="tip"><div class="spiral">\U0001f300</div><div class="who">jump gate</div><div class="bubble">__TIP__</div></div>
+<div class="tip"><div class="who">no phrase?</div><div class="bubble">if you get denied and want a temporary pass phrase, DM <a href="https://x.com/JeffreyATodd">@JeffreyATodd</a> on X and request one.</div></div>
 <p class="foss">free and open-source &mdash; <a href="https://github.com/Agent-Naive/dev-project-bouncer">github.com/Agent-Naive/dev-project-bouncer</a></p></div></body></html>"""
 
 # ── SETUP: SAFE TO CHANGE ────────────────────────────────────
@@ -340,6 +347,10 @@ def resolve_logo(value):
 # (durably, at mint time — a restart can't re-arm it) and binds the grant
 # to the VIP's IP; a different IP kills the grant (KILL_IP). The operator's
 # phrase (ADMIN_PHRASE, label "operator") never burns — Poli knows the boss.
+# Joke-door labels ("label joke phrase" in viplist.txt) are the deliberate
+# exception: the phrase never burns — every guest gets their own IP-bound
+# wristband — and serve_behind_rope() locks those wristbands to the
+# rickroll page. Marketing only: the app is unreachable on a joke grant.
 # Don't "simplify" this into multi-use phrases or IP-less sessions — that's
 # the whole lock.
 # ────────────────────────────────────────────────────────────
@@ -362,7 +373,10 @@ class BouncerState:
             self.serve_dir = d
         self.ttl = args.ttl
         self.server_secret = secrets.token_bytes(32)
-        self.phrases = load_viplist(args.viplist, args.ttl)  # label -> (salt, dk, ttl)
+        self.phrases, self.joke_labels = load_viplist(args.viplist, args.ttl)  # label -> (salt, dk, ttl)
+        self.joke_grants = {}  # (label, ip) -> {"ip","expires","ttl"}: one locked wristband per guest
+        self.rickroll_on = str(getattr(args, "rickroll", "on") or "on").strip().lower() not in (
+            "0", "off", "false", "no")
         if not self.phrases:
             sys.exit("error: no usable phrases in the VIP list (fail closed)")
         self.grants = {}    # label -> {"ip": str, "expires": int, "ttl": int}
@@ -402,8 +416,9 @@ class BouncerState:
         """Spend a label's one-shot phrase: burned in memory now, and in
         burned.txt so the one-shot promise survives a restart. Idempotent —
         burn-at-mint means EXPIRED/KILL_IP may re-burn an already-burned
-        label. The operator's label never burns: Poli knows the boss."""
-        if label == ADMIN_LABEL or label in self.burned:
+        label. The operator's label never burns: Poli knows the boss.
+        Joke-door labels never burn either — that's the marketing deal."""
+        if label == ADMIN_LABEL or label in self.joke_labels or label in self.burned:
             return
         self.burned.add(label)
         persist_burn(self.burned_path, label)
@@ -439,22 +454,38 @@ class BouncerState:
 # label was tried — that tells an attacker which labels exist.
 # ────────────────────────────────────────────────────────────
 def split_viplist_line(line):
-    """Split one viplist line -> (label, ttl_or_None, phrase), or None if
-    malformed. 'label ttl phrase' when the token after the label is a
-    positive integer; otherwise 'label phrase' (spaces allowed in phrase)."""
+    """Split one viplist line -> (label, ttl_or_None, phrase, is_joke), or
+    None if malformed. 'label ttl phrase' when the token after the label is
+    a positive integer; 'label joke [ttl] phrase' marks a joke-door label
+    (reusable marketing phrase, wristband locked to the rickroll page —
+    never burns). Otherwise 'label phrase' (spaces allowed in phrase).
+    NOTE: the literal word 'joke' right after the label is the flag — a
+    phrase that begins with 'joke' needs a reword."""
+    parts = line.split(None, 3)
+    if len(parts) >= 2 and parts[1].lower() == "joke":
+        rest = parts[2:]
+        if not rest:
+            return None
+        if len(rest) == 2 and rest[0].isdigit() and int(rest[0]) > 0:
+            return parts[0], int(rest[0]), rest[1], True
+        return parts[0], None, " ".join(rest), True
     parts = line.split(None, 2)
     if len(parts) == 3 and parts[1].isdigit() and int(parts[1]) > 0:
-        return parts[0], int(parts[1]), parts[2]
+        return parts[0], int(parts[1]), parts[2], False
     parts = line.split(None, 1)
     if len(parts) == 2:
-        return parts[0], None, parts[1]
+        return parts[0], None, parts[1], False
     return None
 
 
 def load_viplist(path, default_ttl):
-    """Read the VIP list: label -> (salt, dk, ttl). ttl is the VIP's own
-    grant lifetime, or default_ttl (the house TTL) when the line has none."""
+    """Read the VIP list -> (phrases, joke_labels). phrases: label ->
+    (salt, dk, ttl), where ttl is the VIP's own grant lifetime or
+    default_ttl (the house TTL) when the line has none. joke_labels: labels
+    whose phrase is a reusable marketing joke — never burns, wristband
+    locked to the rickroll page."""
     phrases = {}
+    joke_labels = set()
     try:
         with open(path, "r", encoding="utf-8") as f:
             lines = f.readlines()
@@ -466,21 +497,23 @@ def load_viplist(path, default_ttl):
             continue
         split = split_viplist_line(line)
         if split is None:
-            sys.exit("error: VIP list line %d: need 'label phrase' or 'label ttl phrase'"
-                     % lineno)
-        label, ttl, phrase = split
+            sys.exit("error: VIP list line %d: need 'label phrase', 'label ttl phrase',"
+                     " or 'label joke [ttl] phrase'" % lineno)
+        label, ttl, phrase, is_joke = split
         if label in phrases:
             sys.exit("error: VIP list line %d: duplicate label '%s'" % (lineno, label))
         salt = secrets.token_bytes(16)
         dk = hashlib.pbkdf2_hmac("sha256", phrase.encode("utf-8"), salt, PBKDF2_ITERATIONS)
         phrases[label] = (salt, dk, ttl if ttl else default_ttl)
-    return phrases
+        if is_joke:
+            joke_labels.add(label)
+    return phrases, joke_labels
 
 
 def read_viplist_raw(path):
-    """Club Management only: label -> (plaintext phrase, ttl_or_None), to
-    preserve phrases and per-VIP TTLs the operator didn't change.
-    Local machine, operator's own file."""
+    """Club Management only: label -> (plaintext phrase, ttl_or_None,
+    is_joke), to preserve phrases, per-VIP TTLs, and joke-door flags the
+    operator didn't change. Local machine, operator's own file."""
     found = {}
     try:
         with open(path, "r", encoding="utf-8") as f:
@@ -494,9 +527,9 @@ def read_viplist_raw(path):
         split = split_viplist_line(line)
         if split is None:
             continue
-        label, ttl, phrase = split
+        label, ttl, phrase, is_joke = split
         if label not in found:
-            found[label] = (phrase, ttl)
+            found[label] = (phrase, ttl, is_joke)
     return found
 
 
@@ -659,6 +692,24 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def serve_rickroll(self):
+        """The joke door's one page. Served from alongside bouncer.py, like
+        poli.webp. Fixed filename — no user input touches the path. A
+        missing file is a 404, never a crash."""
+        try:
+            here = os.path.dirname(os.path.abspath(__file__))
+            with open(os.path.join(here, "rickroll.html"), "r", encoding="utf-8") as f:
+                data = f.read().encode("utf-8")
+        except OSError:
+            self.serve_plain(404, "the joke's on us — no rickroll today.")
+            return
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(data)
+
     def serve_doors(self, label):
         """Beat 2: the doors. Only reachable with a live grant — strangers
         get the gate. The button walks the VIP to / (the app)."""
@@ -717,12 +768,21 @@ class Handler(BaseHTTPRequestHandler):
         now = int(time.time())
         with st.lock:
             grant = st.grants.get(label)
+            joke = False
+            if grant is None:
+                # Joke wristbands live in their own book: one per guest IP,
+                # same shape, same HMAC ceremony.
+                grant = st.joke_grants.get((label, ip))
+                joke = grant is not None
             if not grant:
                 return None
             if grant["expires"] <= now:
                 # last call — wristband faded
-                del st.grants[label]
-                st.burn(label)
+                if joke:
+                    del st.joke_grants[(label, ip)]
+                else:
+                    del st.grants[label]
+                    st.burn(label)
                 st.audit("EXPIRED", label, grant["ip"])
                 return None
             body = "%s.%d.%s" % (label, grant["expires"], grant["ip"])
@@ -788,8 +848,9 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 self.serve_gate()
             return
-        if self.authed_label():
-            self.serve_behind_rope()
+        label = self.authed_label()
+        if label:
+            self.serve_behind_rope(label)
         else:
             self.serve_gate()
 
@@ -805,8 +866,9 @@ class Handler(BaseHTTPRequestHandler):
         # A VIP with a live grant POSTing is talking to their app, not
         # knocking — forward it behind the rope. Only strangers knock;
         # the grant ceremony below is for them.
-        if self.authed_label():
-            self.serve_behind_rope()
+        label = self.authed_label()
+        if label:
+            self.serve_behind_rope(label)
             return
         st = self.state
         ip = client_ip(self)
@@ -831,7 +893,15 @@ class Handler(BaseHTTPRequestHandler):
                     matched = ADMIN_LABEL
             if not matched:
                 for label, (salt, dk, label_ttl) in st.phrases.items():
-                    if label in st.grants or label in st.burned:
+                    if label in st.burned:
+                        continue
+                    is_joke = label in st.joke_labels
+                    if is_joke:
+                        # The joke door: reusable marketing phrase, one
+                        # wristband per guest IP. Off = the door is closed.
+                        if not st.rickroll_on or (label, ip) in st.joke_grants:
+                            continue
+                    elif label in st.grants:
                         continue
                     test = hashlib.pbkdf2_hmac("sha256", phrase.encode("utf-8"), salt, PBKDF2_ITERATIONS)
                     if hmac.compare_digest(dk, test):
@@ -841,11 +911,16 @@ class Handler(BaseHTTPRequestHandler):
             if matched:
                 ttl = matched_ttl or st.ttl
                 expires = int(time.time()) + ttl
-                st.grants[matched] = {"ip": ip, "expires": expires, "ttl": ttl}
-                # Burn at mint: the phrase dies the moment it works. The
-                # wristband stays valid for its TTL; a restart can't re-arm
-                # the phrase. (burn() itself exempts the operator.)
-                st.burn(matched)
+                if matched in st.joke_labels:
+                    # Locked wristband: never burns, and serve_behind_rope()
+                    # will only ever show this guest the rickroll page.
+                    st.joke_grants[(matched, ip)] = {"ip": ip, "expires": expires, "ttl": ttl}
+                else:
+                    st.grants[matched] = {"ip": ip, "expires": expires, "ttl": ttl}
+                    # Burn at mint: the phrase dies the moment it works. The
+                    # wristband stays valid for its TTL; a restart can't re-arm
+                    # the phrase. (burn() itself exempts the operator.)
+                    st.burn(matched)
                 cookie = sign_cookie(st, matched, ip, expires)
         if matched:
             st.audit("GRANT", matched, ip)
@@ -872,15 +947,27 @@ class Handler(BaseHTTPRequestHandler):
         self.do_GET()
 
     def do_HEAD(self):
-        if self.authed_label():
-            self.serve_behind_rope()
+        label = self.authed_label()
+        if label:
+            self.serve_behind_rope(label)
         else:
             self.serve_gate()
 
     # -- behind the rope -------------------------------------------
 
-    def serve_behind_rope(self):
-        if self.state.mode == "serve":
+    def serve_behind_rope(self, label):
+        """Beyond the rope. VIPs get the app (serve/proxy) — but a joke-door
+        wristband is locked: it only ever serves the rickroll page, never
+        the app. Marketing only."""
+        st = self.state
+        if label in st.joke_labels:
+            if not st.rickroll_on:
+                # Operator closed the joke door mid-visit — back to the line.
+                self.serve_gate()
+                return
+            self.serve_rickroll()
+            return
+        if st.mode == "serve":
             self.serve_file()
         else:
             self.proxy()
@@ -1064,6 +1151,10 @@ Later: pre-filled &mdash; change what you want, leave the rest.</p>
 <input type="text" name="burned" value="__BURNED__" placeholder="./burned.txt">
 <p class="hint">One-shot phrases burn here the moment they mint a grant. Survives restarts — a burned label can't knock again until it gets a fresh phrase.</p>
 
+<h2>The joke door</h2>
+<label><input type="checkbox" name="rickroll" value="1" __RICKROLL_CHECKED__> Rick Roll door is open</label>
+<p class="hint">A <code>joke</code> VIP line (e.g. <code>Rick joke Never Gonna Give You Up</code>) mints reusable wristbands locked to rickroll.html — marketing only, never the app. Untick to close the joke door (live joke wristbands stop working). Takes effect on gate restart.</p>
+
 <h2>The owner</h2>
 <label>Operator phrase &mdash; Poli knows the boss. Never burns, knock as often as you like.</label>
 <input type="password" name="admin_phrase" placeholder="(unchanged)" autocomplete="off">
@@ -1168,15 +1259,18 @@ def build_manage_page(cfg_path):
     house_ttl = g("ttl", "86400")
 
     rows = []
-    for i, (label, (_phrase, ttl)) in enumerate(existing.items()):
-        rows.append(
+    for i, (label, (_phrase, ttl, is_joke)) in enumerate(existing.items()):
+        badge = '<span class="regen">🃏 joke door</span>' if is_joke else ""
+        row = (
             '<div class="vip-row">'
             '<input type="text" name="label_%d" value="%s" placeholder="label">'
             '<input type="text" class="ttl" name="ttl_%d" value="%s" placeholder="house: %ss">'
             '<input type="text" name="newphrase_%d" placeholder="new phrase (blank = keep)" autocomplete="off">'
             '<span class="regen"><input type="checkbox" name="regen_%d" value="1"> regenerate</span>'
-            "</div>" % (i, html.escape(label), i,
-                        html.escape(str(ttl) if ttl else ""), house_ttl, i, i))
+            "%s</div>") % (i, html.escape(label), i,
+                           html.escape(str(ttl) if ttl else ""), house_ttl, i, i,
+                           badge)
+        rows.append(row)
     if not rows:
         rows.append(
             '<div class="vip-row">'
@@ -1211,6 +1305,9 @@ def build_manage_page(cfg_path):
     page = page.replace("__VIPLIST__", html.escape(viplist_path))
     page = page.replace("__ATTEMPT_LOG__", html.escape(g("attempt_log", "")))
     page = page.replace("__BURNED__", html.escape(burned_path))
+    page = page.replace("__RICKROLL_CHECKED__",
+                        "checked" if str(g("rickroll", "on")).strip().lower() not in
+                        ("0", "off", "false", "no") else "")
     page = page.replace("__BURNED_ROWS__", burned_rows)
     page = page.replace("__VIP_ROWS__", "".join(rows))
     page = page.replace("__VIP_COUNT__", str(n))
@@ -1258,8 +1355,8 @@ class ManageHandler(BaseHTTPRequestHandler):
         # --- VIP list: keep untouched phrases, generate the rest ---
         viplist_path = fv("viplist", "./viplist.txt") or "./viplist.txt"
         existing = read_viplist_raw(viplist_path) if os.path.exists(viplist_path) else {}
-        vips = {}       # label -> (phrase, ttl_or_None) to write
-        show_once = {}  # label -> (phrase, ttl_or_None), new/changed: display once
+        vips = {}       # label -> (phrase, ttl_or_None, is_joke) to write
+        show_once = {}  # label -> (phrase, ttl_or_None, is_joke), new/changed: display once
         for i in range(n):
             label = fv("label_%d" % i)
             if not label:
@@ -1287,13 +1384,16 @@ class ManageHandler(BaseHTTPRequestHandler):
                     return
             new_phrase = fv("newphrase_%d" % i)
             regen = ("regen_%d" % i) in form
+            # A joke-door label keeps its flag across saves — the flag is
+            # what locks the wristband to the rickroll page.
+            is_joke = existing[label][2] if label in existing else False
             if new_phrase:
-                vips[label] = (new_phrase, ttl)
-                show_once[label] = (new_phrase, ttl)
+                vips[label] = (new_phrase, ttl, is_joke)
+                show_once[label] = (new_phrase, ttl, is_joke)
             elif regen or label not in existing:
                 phrase = gen_phrase()
-                vips[label] = (phrase, ttl)
-                show_once[label] = (phrase, ttl)
+                vips[label] = (phrase, ttl, is_joke)
+                show_once[label] = (phrase, ttl, is_joke)
             else:
                 vips[label] = existing[label]
         if not vips:
@@ -1322,6 +1422,7 @@ class ManageHandler(BaseHTTPRequestHandler):
             "VIPLIST": viplist_path,
             "ATTEMPT_LOG": fv("attempt_log", ""),
             "BURNED": burned_path,
+            "RICKROLL": "on" if ("rickroll" in form) else "off",
         }
         # --- the owner ---
         # The operator phrase: blank in the form = keep whatever is in the
@@ -1329,7 +1430,7 @@ class ManageHandler(BaseHTTPRequestHandler):
         # phrase — the gate also refuses to start on a collision.
         admin_phrase = fv("admin_phrase", "")
         if admin_phrase:
-            if admin_phrase in [p for (p, _t) in vips.values()]:
+            if admin_phrase in [p for (p, _t, _j) in vips.values()]:
                 self._send(400, "the operator phrase must not match a VIP phrase.",
                            "text/plain; charset=utf-8")
                 return
@@ -1362,10 +1463,13 @@ class ManageHandler(BaseHTTPRequestHandler):
                 f.write("# BOUNCER VIP list — written by Club Management.\n")
                 f.write("# NEVER commit this file (gitignored).\n")
                 f.write("# 'label phrase' uses the house grant lifetime;\n")
-                f.write("# 'label ttl phrase' gives that VIP their own (seconds).\n")
-                for label, (phrase, ttl) in vips.items():
+                f.write("# 'label ttl phrase' gives that VIP their own (seconds);\n")
+                f.write("# 'label joke [ttl] phrase' is a joke-door label: the phrase\n")
+                f.write("# never burns and its wristband only opens rickroll.html.\n")
+                for label, (phrase, ttl, is_joke) in vips.items():
+                    flag = "joke " if is_joke else ""
                     if ttl:
-                        f.write("%s %d %s\n" % (label, ttl, phrase))
+                        f.write("%s %s%d %s\n" % (label, flag, ttl, phrase))
                     else:
                         f.write("%s %s\n" % (label, phrase))
             # A fresh phrase re-arms a burned label — the only way back in.
@@ -1385,7 +1489,7 @@ class ManageHandler(BaseHTTPRequestHandler):
                 '<div class="phrase">%s &nbsp;·&nbsp; %s &nbsp;·&nbsp; %s</div>' % (
                     html.escape(label), html.escape(phrase),
                     html.escape(human_seconds(ttl) if ttl else "house grant lifetime"))
-                for label, (phrase, ttl) in show_once.items())
+                for label, (phrase, ttl, _joke) in show_once.items())
         else:
             phrases = "<p>No new phrases — the list is unchanged.</p>"
         page = CONFIRM_HTML.replace("__SUMMARY__", summary).replace("__PHRASES__", phrases)
@@ -1465,6 +1569,8 @@ def main():
                     help="accent color, #rgb or #rrggbb (default: #c9a227)")
     ap.add_argument("--admin-phrase", default=None,
                     help="operator's phrase: mints grants that never burn (default: none)")
+    ap.add_argument("--rickroll", default=None,
+                    help="joke door: on/off — the rickroll phrase mints locked wristbands (default: on)")
     ap.add_argument("--manage", action="store_true",
                     help="Club Management: local-only web setup (127.0.0.1, never tunnel it)")
     cli = ap.parse_args()
@@ -1516,6 +1622,7 @@ def main():
     args.club_logo = pick(cli.club_logo, "club_logo", "")
     args.accent = pick(cli.accent, "accent", DEFAULT_ACCENT)
     args.admin_phrase = pick(cli.admin_phrase, "admin_phrase", "")
+    args.rickroll = pick(cli.rickroll, "rickroll", "on")
     if not args.viplist:
         sys.exit("error: no VIP list — set VIPLIST in bouncer.conf or pass --viplist")
 
@@ -1524,9 +1631,9 @@ def main():
     server.state = state
     server.daemon_threads = True
     dest = args.serve if state.mode == "serve" else args.target
-    print("[bouncer] 🌀 live on %s:%d -> %s | mode=%s ttl=%ds | phrases=%d | club=%s | one-shot grants"
+    print("[bouncer] 🌀 live on %s:%d -> %s | mode=%s ttl=%ds | phrases=%d | club=%s | rickroll=%s | one-shot grants"
           % (args.bind, args.port, dest, state.mode, args.ttl, len(state.phrases),
-             state.club_name), flush=True)
+             state.club_name, "on" if state.rickroll_on else "off"), flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
